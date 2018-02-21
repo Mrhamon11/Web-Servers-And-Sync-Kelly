@@ -18,7 +18,7 @@ void queueInit(Queue *queue) {
 
 void addToQueue(Queue *queue, int data) {
     Buffer *buff = malloc(sizeof(Buffer));
-    bufferInit(&buff, data);
+    bufferInit(buff, data);
 
     if(queue->head == NULL) {
         queue->head = buff;
