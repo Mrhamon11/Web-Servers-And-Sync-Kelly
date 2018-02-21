@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "web_page_buffer.h"
+#include "web_thread.h"
+
 
 int main(int argc, char *argv[]){
     Queue *queue = queueInit();
@@ -16,4 +18,9 @@ int main(int argc, char *argv[]){
     while(!queueIsEmpty(queue)){
         printf("%d\t", pollFromQueue(queue));
     }
+
+    printf("\n");
+
+    threads();
+
 }
