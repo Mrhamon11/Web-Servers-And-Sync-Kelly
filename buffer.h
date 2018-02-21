@@ -22,7 +22,7 @@ void bufferInit(Buffer *buffer, int data);
 
 void queueInit(Queue *queue);
 
-_Bool addToQueue(Queue *queue, int data);
+void addToQueue(Queue *queue, int data);
 
 Buffer* pollFromQueue(Queue *queue);
 

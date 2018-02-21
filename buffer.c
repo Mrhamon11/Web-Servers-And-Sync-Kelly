@@ -16,7 +16,7 @@ void queueInit(Queue *queue) {
     queue->tail = NULL;
 }
 
-_Bool addToQueue(Queue *queue, int data) {
+void addToQueue(Queue *queue, int data) {
     Buffer *buff = malloc(sizeof(Buffer));
     bufferInit(&buff, data);
 
@@ -28,5 +28,4 @@ _Bool addToQueue(Queue *queue, int data) {
         queue->tail->next = buff;
         queue->tail = buff;
     }
-    return 1;
 }
