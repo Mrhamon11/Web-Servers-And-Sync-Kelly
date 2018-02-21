@@ -12,5 +12,7 @@ int main(){
         addToQueue(queue, i);
     }
 
-    while(!)
+    while(!queueIsEmpty(queue)){
+        printf("%d\t", pollFromQueue(queue));
+    }
 }

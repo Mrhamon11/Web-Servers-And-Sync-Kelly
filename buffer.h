@@ -26,4 +26,6 @@ void addToQueue(Queue *queue, int data);
 
 int pollFromQueue(Queue *queue);
 
+_Bool queueIsEmpty(Queue *queue);
+
 #endif //OS_HW1_BUFFER_H

@@ -29,13 +29,6 @@ void addToQueue(Queue *queue, int data) {
     }
 }
 
-_Bool queueIsEmpty(Queue *queue){
-    if(queue->head == NULL){
-        return 1;
-    }
-    return 0;
-}
-
 int pollFromQueue(Queue *queue){
     if(queueIsEmpty(queue)){
         return -1;
@@ -44,4 +37,8 @@ int pollFromQueue(Queue *queue){
     queue->head = toRemove->next;
 
     return toRemove->data;
+}
+
+_Bool queueIsEmpty(Queue *queue){
+    return queue->head == NULL;
 }
