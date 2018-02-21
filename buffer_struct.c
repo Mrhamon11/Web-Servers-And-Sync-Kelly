@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "buffer.h"
+#include "buffer_struct.h"
 
 //
 // Created by Marty on 2/20/18.

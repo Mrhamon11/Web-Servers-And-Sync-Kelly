@@ -3,12 +3,13 @@
 //
 
 #include <stdio.h>
-#include "buffer.h"
+#include <stdlib.h>
+#include "buffer_struct.h"
 
-int main(){
+int main(int argc, char *argv[]){
     Queue *queue = queueInit();
 
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < atoi(argv[1]); i++){
         addToQueue(queue, i);
     }
 
