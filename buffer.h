@@ -5,15 +5,18 @@
 #ifndef OS_HW1_BUFFER_H
 #define OS_HW1_BUFFER_H
 
-typedef struct{
-    int data;
-    Buffer *next;
-}Buffer;
+typedef struct Buffer Buffer;
+typedef struct Queue Queue;
 
-typedef struct{
+struct Buffer{
+    int data;
+    struct Buffer *next;
+};
+
+struct Queue{
     Buffer *head;
     Buffer *tail;
-}Queue;
+};
 
 void bufferInit(Buffer *buffer, int data);
 
