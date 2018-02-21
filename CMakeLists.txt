@@ -5,8 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_executable(testBuffer
         testBuffer.c
-        buffer_struct.c
-        buffer_struct.h)
+        web_page_buffer.c
+        web_page_buffer.h)
 
 add_executable(os_hw1
         client.c
@@ -14,7 +14,7 @@ add_executable(os_hw1
         Makefile
         nigel.jpg
         server.c
-        buffer_struct.c
-        buffer_struct.h)
+        web_page_buffer.c
+        web_page_buffer.h)
 
 

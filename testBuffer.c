@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "buffer_struct.h"
+#include "web_page_buffer.h"
 
 int main(int argc, char *argv[]){
     Queue *queue = queueInit();
