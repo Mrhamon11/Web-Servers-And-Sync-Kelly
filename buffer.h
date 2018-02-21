@@ -17,6 +17,8 @@ typedef struct{
 
 void bufferInit(Buffer *buffer, int data);
 
-void
+void queueInit(Queue *queue);
+
+_Bool addToQueue(Queue *queue, int data);
 
 #endif //OS_HW1_BUFFER_H
