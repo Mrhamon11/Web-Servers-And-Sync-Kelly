@@ -2,7 +2,7 @@
 #include "buffer.h"
 
 //
-// Created by parallels on 2/20/18.
+// Created by Marty on 2/20/18.
 //
 Buffer* bufferInit(int data) {
     Buffer *buffer = malloc(sizeof(Buffer));
