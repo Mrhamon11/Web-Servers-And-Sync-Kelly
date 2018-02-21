@@ -4,21 +4,20 @@
 //
 // Created by parallels on 2/20/18.
 //
-void bufferInit(Buffer *buffer, int data) {
-    buffer = malloc(sizeof(Buffer));
+Buffer* bufferInit(int data) {
+    Buffer *buffer = malloc(sizeof(Buffer));
     buffer->data = data;
     buffer->next = NULL;
 }
 
-void queueInit(Queue *queue) {
-    queue = malloc(sizeof(Queue));
+Queue* queueInit() {
+    Queue *queue = malloc(sizeof(Queue));
     queue->head = NULL;
     queue->tail = NULL;
 }
 
 void addToQueue(Queue *queue, int data) {
-    Buffer *buff = malloc(sizeof(Buffer));
-    bufferInit(buff, data);
+    Buffer *buff = bufferInit(data);
 
     if(queue->head == NULL) {
         queue->head = buff;
@@ -28,4 +27,21 @@ void addToQueue(Queue *queue, int data) {
         queue->tail->next = buff;
         queue->tail = buff;
     }
+}
+
+_Bool queueIsEmpty(Queue *queue){
+    if(queue->head == NULL){
+        return 1;
+    }
+    return 0;
+}
+
+int pollFromQueue(Queue *queue){
+    if(queueIsEmpty(queue)){
+        return -1;
+    }
+    Buffer *toRemove = queue->head;
+    queue->head = toRemove->next;
+
+    return toRemove->data;
 }

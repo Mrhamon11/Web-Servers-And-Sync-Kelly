@@ -8,4 +8,9 @@ add_executable(os_hw1
         index.html
         Makefile
         nigel.jpg
-        server.c buffer.c buffer.h)
+        server.c
+        buffer.c
+        buffer.h
+        testBuffer.c)
+
+

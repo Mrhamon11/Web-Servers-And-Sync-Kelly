@@ -18,14 +18,12 @@ struct Queue{
     Buffer *tail;
 };
 
-void bufferInit(Buffer *buffer, int data);
+Buffer* bufferInit(int data);
 
-void queueInit(Queue *queue);
+Queue* queueInit();
 
 void addToQueue(Queue *queue, int data);
 
 int pollFromQueue(Queue *queue);
-
-_Bool queueIsEmpty(Queue *queue);
 
 #endif //OS_HW1_BUFFER_H
