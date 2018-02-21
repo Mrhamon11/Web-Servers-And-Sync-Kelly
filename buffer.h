@@ -7,7 +7,7 @@
 
 typedef struct{
     int data;
-    struct Buffer *next;
+    Buffer *next;
 }Buffer;
 
 typedef struct{
