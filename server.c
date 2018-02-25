@@ -81,10 +81,10 @@ _Bool buffQueueIsEmpty(BuffQueue *buffQueue){
 	return buffQueue->size == 0;
 }
 
-void initThreads(Thread threads[], int numThreads){
+void initThreads(Thread threads[], int numThreads, BuffQueue* queue){
     for(int i = 0; i < numThreads; i++){
         Thread thread = threads[i];
-        pthread_create(thread.thread, NULL, executeRequest, NULL);
+        pthread_create(&thread.thread, NULL, executeRequest, queue);
     }
 }
 
@@ -259,8 +259,8 @@ int main(int argc, char **argv)
     numThreads = atoi(argv[3]);
     Thread threads[numThreads];
 	bufferSize = atoi(argv[4]);
-	BuffQueue *queue = buffQueueInit(bufferSize);
-    addToBuffQueue(queue, 0, 0);
+    BuffQueue *queue = buffQueueInit(bufferSize);
+    initThreads(threads, numThreads, queue);
 	/* Become deamon + unstopable and no zombies children (= no wait()) */
 	if(fork() != 0)
 		return 0; /* parent returns OK to shell */
@@ -289,15 +289,15 @@ int main(int argc, char **argv)
 			logger(ERROR,"system call","accept",0);
 		if((pid = fork()) < 0) {
 			logger(ERROR,"system call","fork",0);
-		}
+        }
 		else {
-			if(pid == 0) { 	/* child */
-				(void)close(listenfd);
-				web(socketfd,hit); /* never returns */
-			} else { 	/* parent */
-				(void)close(socketfd);
-			}
-		}
-	}
+            if(pid == 0) { 	/* child */
+                (void)close(listenfd);
+                web(socketfd,hit); /* never returns */
+            } else { 	/* parent */
+                (void)close(socketfd);
+            }
+        }
+    }
 
 }

@@ -52,8 +52,10 @@ Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 
 _Bool buffQueueIsEmpty(BuffQueue *buffQueue);
 
-void initThreads(Thread threads[], int numThreads);
+void initThreads(Thread threads[], int numThreads, BuffQueue *queue);
 
 void *executeRequest(void* param);
+
+void web(int fd, int hit);
 
 #endif //OS_HW1_SERVER_H
