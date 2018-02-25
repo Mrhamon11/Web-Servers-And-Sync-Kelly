@@ -14,6 +14,7 @@ add_executable(os_hw1
         index.html
         Makefile
         nigel.jpg
-        server.c web_page_buffer.c web_page_buffer.h server.h)
+        server.c
+        server.h)
 
 

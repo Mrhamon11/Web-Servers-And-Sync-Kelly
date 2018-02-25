@@ -10,7 +10,7 @@
 //
 
 typedef struct Buffer Buffer;
-typedef struct Queue Queue;
+typedef struct BuffQueue BuffQueue;
 
 struct Buffer{
     int socketfd;
@@ -18,21 +18,24 @@ struct Buffer{
     struct Buffer *next;
 };
 
-struct Queue{
+struct BuffQueue{
     Buffer *head;
     Buffer *tail;
     int size;
     int maxSize;
 };
 
+
 Buffer* bufferInit(int socketfd, int hit);
 
-Queue* queueInit(int maxSize);
+BuffQueue* buffQueueInit(int maxSize);
 
-void addToQueue(Queue *queue, int socketfd, int hit);
+void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit);
 
-Buffer* pollFromQueue(Queue *queue);
+Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 
-_Bool queueIsEmpty(Queue *queue);
+_Bool buffQueueIsEmpty(BuffQueue *buffQueue);
+
+int threadIndex(int curIndex, int numThreads);
 
 #endif //OS_HW1_SERVER_H
