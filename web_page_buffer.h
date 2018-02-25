@@ -9,7 +9,8 @@ typedef struct Buffer Buffer;
 typedef struct Queue Queue;
 
 struct Buffer{
-    int data;
+    int socketfd;
+    int hit;
     struct Buffer *next;
 };
 
@@ -18,13 +19,13 @@ struct Queue{
     Buffer *tail;
 };
 
-Buffer* bufferInit(int data);
+Buffer* bufferInit(int socketfd, int hit);
 
 Queue* queueInit();
 
-void addToQueue(Queue *queue, int data);
+void addToQueue(Queue *queue, int socketfd, int hit);
 
-int pollFromQueue(Queue *queue);
+Buffer* pollFromQueue(Queue *queue);
 
 _Bool queueIsEmpty(Queue *queue);
 

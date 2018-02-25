@@ -4,9 +4,10 @@
 //
 // Created by Marty on 2/20/18.
 //
-Buffer* bufferInit(int data) {
+Buffer* bufferInit(int socketfd, int hit) {
     Buffer *buffer = malloc(sizeof(Buffer));
-    buffer->data = data;
+    buffer->socketfd = socketfd;
+    buffer->hit = hit;
     buffer->next = NULL;
 }
 
@@ -16,8 +17,8 @@ Queue* queueInit() {
     queue->tail = NULL;
 }
 
-void addToQueue(Queue *queue, int data) {
-    Buffer *buff = bufferInit(data);
+void addToQueue(Queue *queue, int socketfd, int hit) {
+    Buffer *buff = bufferInit(socketfd, hit);
 
     if(queue->head == NULL) {
         queue->head = buff;
@@ -29,14 +30,14 @@ void addToQueue(Queue *queue, int data) {
     }
 }
 
-int pollFromQueue(Queue *queue){
+Buffer* pollFromQueue(Queue *queue){
     if(queueIsEmpty(queue)){
-        return -1;
+        return NULL;
     }
     Buffer *toRemove = queue->head;
     queue->head = toRemove->next;
 
-    return toRemove->data;
+    return toRemove;
 }
 
 _Bool queueIsEmpty(Queue *queue){
