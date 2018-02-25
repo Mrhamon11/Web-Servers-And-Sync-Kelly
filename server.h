@@ -4,10 +4,19 @@
 
 #ifndef OS_HW1_SERVER_H
 #define OS_HW1_SERVER_H
+#define 0 FALSE
+#define 1 TRUE
 
 //
 // Created by hamon11 on 2/25/18.
 //
+
+pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+_Bool queueLocked = FALSE;
+
+
 
 typedef struct Buffer Buffer;
 typedef struct BuffQueue BuffQueue;
@@ -44,5 +53,7 @@ Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 _Bool buffQueueIsEmpty(BuffQueue *buffQueue);
 
 int threadIndex(int curIndex, int numThreads);
+
+void *executeRequest(void* param);
 
 #endif //OS_HW1_SERVER_H

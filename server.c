@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 #include "server.h"
 
 #define VERSION 23
@@ -23,6 +24,8 @@
 
 
 //Our code:
+
+
 
 Thread* threadInit(int id) {
 	Thread *thread = malloc(sizeof(Thread));
