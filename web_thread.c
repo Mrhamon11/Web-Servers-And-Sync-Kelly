@@ -13,9 +13,11 @@ void *threadFunc(void *pArg){
 
 int threads(){
     int i;
+    int index[4];
     pthread_t tid[4];
     for(i = 0; i < 4; i++){
-        pthread_create(&tid[i], NULL, threadFunc, &i);
+        index[i] = i;
+        pthread_create(&tid[i], NULL, threadFunc, &index[i]);
     }
     for(i = 0; i < 4; i++){
         pthread_join(tid[i], NULL);

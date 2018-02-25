@@ -9,17 +9,17 @@
 
 
 int main(int argc, char *argv[]){
-    Queue *queue = queueInit();
-
-    for(int i = 0; i < atoi(argv[1]); i++){
-        addToQueue(queue, i);
-    }
-
-    while(!queueIsEmpty(queue)){
-        printf("%d\t", pollFromQueue(queue));
-    }
-
-    printf("\n");
+//    Queue *queue = queueInit();
+//
+//    for(int i = 0; i < atoi(argv[1]); i++){
+//        addToQueue(queue, i);
+//    }
+//
+//    while(!queueIsEmpty(queue)){
+//        printf("%d\t", pollFromQueue(queue));
+//    }
+//
+//    printf("\n");
 
     threads();
 
