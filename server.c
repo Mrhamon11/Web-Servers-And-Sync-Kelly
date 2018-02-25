@@ -135,12 +135,12 @@ void web(int fd, int hit)
 
 int main(int argc, char **argv)
 {
-	int i, port, pid, listenfd, socketfd, hit;
+	int i, port, pid, listenfd, socketfd, hit, threads, bufferSize;
 	socklen_t length;
 	static struct sockaddr_in cli_addr; /* static = initialised to zeros */
 	static struct sockaddr_in serv_addr; /* static = initialised to zeros */
 
-	if( argc < 3  || argc > 3 || !strcmp(argv[1], "-?") ) {
+	if( argc < 5  || argc > 5 || !strcmp(argv[1], "-?") ) {
 		(void)printf("hint: nweb Port-Number Top-Directory\t\tversion %d\n\n"
 	"\tnweb is a small and very safe mini web server\n"
 	"\tnweb only servers out file/web pages with extensions named below\n"
@@ -167,6 +167,8 @@ int main(int argc, char **argv)
 		(void)printf("ERROR: Can't Change to directory %s\n",argv[2]);
 		exit(4);
 	}
+    threads = atoi(argv[3]);
+	bufferSize = atoi(argv[4]);
 	/* Become deamon + unstopable and no zombies children (= no wait()) */
 	if(fork() != 0)
 		return 0; /* parent returns OK to shell */
