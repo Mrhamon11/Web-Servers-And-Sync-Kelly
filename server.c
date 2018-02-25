@@ -99,7 +99,7 @@ void *executeRequest(void* param) {
 		Buffer *buffer = pollFromBuffQueue(buffQueue);
 		queueAccessible = buffQueueIsEmpty(buffQueue) ? FALSE : TRUE;
 		pthread_mutex_unlock(&m);
-		pthread_cond_signal(&cond);
+		pthread_cond_broadcast(&cond);
 		web(buffer->socketfd,buffer->hit);
 	}
 }
@@ -224,7 +224,7 @@ void web(int fd, int hit)
 
 int main(int argc, char **argv)
 {
-	int i, port, pid, listenfd, socketfd, hit, numThreads, bufferSize;
+	int i, port, /*pid,*/ listenfd, socketfd, hit, numThreads, bufferSize;
 	socklen_t length;
 	static struct sockaddr_in cli_addr; /* static = initialised to zeros */
 	static struct sockaddr_in serv_addr; /* static = initialised to zeros */
@@ -287,17 +287,22 @@ int main(int argc, char **argv)
 		length = sizeof(cli_addr);
 		if((socketfd = accept(listenfd, (struct sockaddr *)&cli_addr, &length)) < 0)
 			logger(ERROR,"system call","accept",0);
-		if((pid = fork()) < 0) {
-			logger(ERROR,"system call","fork",0);
-        }
-		else {
-            if(pid == 0) { 	/* child */
-                (void)close(listenfd);
-                web(socketfd,hit); /* never returns */
-            } else { 	/* parent */
-                (void)close(socketfd);
-            }
-        }
+//		if((pid = fork()) < 0) {
+//			logger(ERROR,"system call","fork",0);
+//        }
+//		else {
+//            if(pid == 0) { 	/* child */
+//                (void)close(listenfd);
+//                web(socketfd,hit); /* never returns */
+//            } else { 	/* parent */
+//                (void)close(socketfd);
+//            }
+//        }
+        pthread_mutex_lock(&m);
+        addToBuffQueue(queue, socketfd, hit);
+        queueAccessible = TRUE;
+        pthread_mutex_unlock(&m);
+        pthread_cond_broadcast(&cond);
     }
 
 }
