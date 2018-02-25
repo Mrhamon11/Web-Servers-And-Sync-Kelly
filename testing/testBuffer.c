@@ -4,8 +4,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "web_page_buffer.h"
-#include "web_thread.h"
+#include "../web_page_buffer.h"
+//#include "web_thread.h"
 
 
 int main(int argc, char *argv[]){
@@ -19,8 +19,8 @@ int main(int argc, char *argv[]){
 //        printf("%d\t", pollFromQueue(queue));
 //    }
 //
-//    printf("\n");
+//       printf("\n");
 
-    threads(atoi(argv[1]));
-
+//    threads(atoi(argv[1]));
+    return 0;
 }

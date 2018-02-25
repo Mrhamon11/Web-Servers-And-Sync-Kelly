@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "web_page_buffer.h"
+
 #define VERSION 23
 #define BUFSIZE 8096
 #define ERROR      42
@@ -170,7 +171,8 @@ int main(int argc, char **argv)
 	}
     threads = atoi(argv[3]);
 	bufferSize = atoi(argv[4]);
-	queueInit(bufferSize);
+	Queue *queue = queueInit(bufferSize);
+	addToQueue(queue, 0, 0);
 	/* Become deamon + unstopable and no zombies children (= no wait()) */
 	if(fork() != 0)
 		return 0; /* parent returns OK to shell */

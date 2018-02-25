@@ -5,10 +5,10 @@
 #ifndef OS_HW1_WEB_THREAD_H
 #define OS_HW1_WEB_THREAD_H
 
-#include <pthread.h>
-#include <stdio.h>
+//#include <pthread.h>
+//#include <stdio.h>
 
-int threads(int numThreads);
+//void threads(int numThreads);
 
 
 #endif //OS_HW1_WEB_THREAD_H

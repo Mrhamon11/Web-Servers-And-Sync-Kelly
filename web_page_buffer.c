@@ -9,6 +9,7 @@ Buffer* bufferInit(int socketfd, int hit) {
     buffer->socketfd = socketfd;
     buffer->hit = hit;
     buffer->next = NULL;
+    return buffer;
 }
 
 Queue* queueInit(int maxSize) {
@@ -17,6 +18,7 @@ Queue* queueInit(int maxSize) {
     queue->tail = NULL;
     queue->size = 0;
     queue->maxSize = maxSize;
+    return queue;
 }
 
 void addToQueue(Queue *queue, int socketfd, int hit) {
