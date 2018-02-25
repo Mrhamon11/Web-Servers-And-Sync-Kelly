@@ -11,6 +11,12 @@
 
 typedef struct Buffer Buffer;
 typedef struct BuffQueue BuffQueue;
+typedef struct Thread Thread;
+
+struct Thread {
+    pthread_t thread;
+    int id;
+};
 
 struct Buffer{
     int socketfd;
@@ -25,6 +31,7 @@ struct BuffQueue{
     int maxSize;
 };
 
+Thread* threadInit(int id);
 
 Buffer* bufferInit(int socketfd, int hit);
 

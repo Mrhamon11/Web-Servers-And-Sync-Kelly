@@ -24,6 +24,12 @@
 
 //Our code:
 
+Thread* threadInit(int id) {
+	Thread *thread = malloc(sizeof(Thread));
+	thread->id = id;
+	return thread;
+}
+
 Buffer* bufferInit(int socketfd, int hit) {
 	Buffer *buffer = malloc(sizeof(Buffer));
 	buffer->socketfd = socketfd;
