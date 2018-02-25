@@ -11,22 +11,26 @@ Buffer* bufferInit(int socketfd, int hit) {
     buffer->next = NULL;
 }
 
-Queue* queueInit() {
+Queue* queueInit(int maxSize) {
     Queue *queue = malloc(sizeof(Queue));
     queue->head = NULL;
     queue->tail = NULL;
+    queue->size = 0;
+    queue->maxSize = maxSize;
 }
 
 void addToQueue(Queue *queue, int socketfd, int hit) {
     Buffer *buff = bufferInit(socketfd, hit);
-
-    if(queue->head == NULL) {
-        queue->head = buff;
-        queue->tail = buff;
-    }
-    else {
-        queue->tail->next = buff;
-        queue->tail = buff;
+    if(queue->size < queue->maxSize){
+        if(queue->head == NULL) {
+            queue->head = buff;
+            queue->tail = buff;
+        }
+        else {
+            queue->tail->next = buff;
+            queue->tail = buff;
+        }
+        queue->size++;
     }
 }
 
@@ -37,9 +41,11 @@ Buffer* pollFromQueue(Queue *queue){
     Buffer *toRemove = queue->head;
     queue->head = toRemove->next;
 
+    queue->size--;
+
     return toRemove;
 }
 
 _Bool queueIsEmpty(Queue *queue){
-    return queue->head == NULL;
+    return queue->size == 0;
 }

@@ -17,11 +17,13 @@ struct Buffer{
 struct Queue{
     Buffer *head;
     Buffer *tail;
+    int size;
+    int maxSize;
 };
 
 Buffer* bufferInit(int socketfd, int hit);
 
-Queue* queueInit();
+Queue* queueInit(int maxSize);
 
 void addToQueue(Queue *queue, int socketfd, int hit);
 
