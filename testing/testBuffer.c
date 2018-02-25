@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../web_page_buffer.h"
+#include "web_page_buffer.h"
 //#include "web_thread.h"
 
 

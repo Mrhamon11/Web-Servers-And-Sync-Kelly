@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "web_page_buffer.h"
+#include "server.h"
 
 #define VERSION 23
 #define BUFSIZE 8096
@@ -17,6 +17,64 @@
 #define LOG        44
 #define FORBIDDEN 403
 #define NOTFOUND  404
+
+
+
+
+
+//Our code:
+
+Buffer* bufferInit(int socketfd, int hit) {
+	Buffer *buffer = malloc(sizeof(Buffer));
+	buffer->socketfd = socketfd;
+	buffer->hit = hit;
+	buffer->next = NULL;
+	return buffer;
+}
+
+Queue* queueInit(int maxSize) {
+	Queue *queue = malloc(sizeof(Queue));
+	queue->head = NULL;
+	queue->tail = NULL;
+	queue->size = 0;
+	queue->maxSize = maxSize;
+	return queue;
+}
+
+void addToQueue(Queue *queue, int socketfd, int hit) {
+	Buffer *buff = bufferInit(socketfd, hit);
+	if(queue->size < queue->maxSize){
+		if(queue->head == NULL) {
+			queue->head = buff;
+			queue->tail = buff;
+		}
+		else {
+			queue->tail->next = buff;
+			queue->tail = buff;
+		}
+		queue->size++;
+	}
+}
+
+Buffer* pollFromQueue(Queue *queue){
+	if(queueIsEmpty(queue)){
+		return NULL;
+	}
+	Buffer *toRemove = queue->head;
+	queue->head = toRemove->next;
+
+	queue->size--;
+
+	return toRemove;
+}
+
+_Bool queueIsEmpty(Queue *queue){
+	return queue->size == 0;
+}
+
+
+
+
 
 struct {
 	char *ext;
@@ -137,12 +195,12 @@ void web(int fd, int hit)
 
 int main(int argc, char **argv)
 {
-	int i, port, pid, listenfd, socketfd, hit, threads, bufferSize;
+	int i, port, pid, listenfd, socketfd, hit;//, threads, bufferSize;
 	socklen_t length;
 	static struct sockaddr_in cli_addr; /* static = initialised to zeros */
 	static struct sockaddr_in serv_addr; /* static = initialised to zeros */
 
-	if( argc < 5  || argc > 5 || !strcmp(argv[1], "-?") ) {
+	if( argc < 3  || argc > 3 || !strcmp(argv[1], "-?") ) {
 		(void)printf("hint: nweb Port-Number Top-Directory\t\tversion %d\n\n"
 	"\tnweb is a small and very safe mini web server\n"
 	"\tnweb only servers out file/web pages with extensions named below\n"
@@ -169,10 +227,10 @@ int main(int argc, char **argv)
 		(void)printf("ERROR: Can't Change to directory %s\n",argv[2]);
 		exit(4);
 	}
-    threads = atoi(argv[3]);
-	bufferSize = atoi(argv[4]);
-	Queue *queue = queueInit(bufferSize);
-	addToQueue(queue, 0, 0);
+//    threads = atoi(argv[3]);
+//	bufferSize = atoi(argv[4]);
+//	Queue *queue = queueInit(bufferSize);
+//	addToQueue(queue, 0, 0);
 	/* Become deamon + unstopable and no zombies children (= no wait()) */
 	if(fork() != 0)
 		return 0; /* parent returns OK to shell */
@@ -211,4 +269,5 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+
 }

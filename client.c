@@ -23,7 +23,6 @@ struct addrinfo *getHostInfo(char* host, char* port) {
     fprintf(stderr, "[getHostInfo:21:getaddrinfo] %s\n", gai_strerror(r));
     return NULL;
   }
-
   return getaddrinfo_res;
 }
 
