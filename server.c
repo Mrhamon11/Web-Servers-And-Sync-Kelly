@@ -88,6 +88,22 @@ void initThreads(Thread threads[], int numThreads){
     }
 }
 
+void *executeRequest(void* param) {
+	BuffQueue *buffQueue = (BuffQueue*) param;
+	while(TRUE) {
+		while(!queueAccessible) {
+			pthread_cond_wait(&cond, &m);
+		}
+		pthread_mutex_lock(&m);
+		queueAccessible = FALSE;
+		Buffer *buffer = pollFromBuffQueue(buffQueue);
+		queueAccessible = buffQueueIsEmpty(buffQueue) ? FALSE : TRUE;
+		pthread_mutex_unlock(&m);
+		pthread_cond_signal(&cond);
+		web(buffer->socketfd,buffer->hit);
+	}
+}
+
 
 struct {
 	char *ext;

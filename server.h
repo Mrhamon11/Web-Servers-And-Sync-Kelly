@@ -4,8 +4,8 @@
 
 #ifndef OS_HW1_SERVER_H
 #define OS_HW1_SERVER_H
-#define 0 FALSE
-#define 1 TRUE
+#define FALSE 0
+#define TRUE 1
 
 //
 // Created by hamon11 on 2/25/18.
@@ -14,7 +14,7 @@
 pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
-_Bool queueLocked = FALSE;
+_Bool queueAccessible = FALSE;
 
 
 
