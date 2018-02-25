@@ -11,15 +11,15 @@ void *threadFunc(void *pArg){
     return 0;
 }
 
-int threads(){
+int threads(int numThreads){
     int i;
-    int index[4];
-    pthread_t tid[4];
-    for(i = 0; i < 4; i++){
+    int index[numThreads];
+    pthread_t tid[numThreads];
+    for(i = 0; i < numThreads; i++){
         index[i] = i;
         pthread_create(&tid[i], NULL, threadFunc, &index[i]);
     }
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < numThreads; i++){
         pthread_join(tid[i], NULL);
     }
 }

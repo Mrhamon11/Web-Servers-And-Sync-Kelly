@@ -21,6 +21,6 @@ int main(int argc, char *argv[]){
 //
 //    printf("\n");
 
-    threads();
+    threads(atoi(argv[1]));
 
 }

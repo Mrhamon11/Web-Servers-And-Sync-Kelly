@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-int threads();
+int threads(int numThreads);
 
 
 #endif //OS_HW1_WEB_THREAD_H
