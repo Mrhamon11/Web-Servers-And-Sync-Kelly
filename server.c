@@ -81,9 +81,11 @@ _Bool buffQueueIsEmpty(BuffQueue *buffQueue){
 	return buffQueue->size == 0;
 }
 
-int threadIndex(int curIndex, int numThreads){
-    int newIndex = curIndex + 1 % numThreads;
-    return newIndex;
+void initThreads(Thread threads[], int numThreads){
+    for(int i = 0; i < numThreads; i++){
+        Thread thread = threads[i];
+        pthread_create(thread.thread, NULL, executeRequest, NULL);
+    }
 }
 
 
@@ -239,7 +241,7 @@ int main(int argc, char **argv)
 		exit(4);
 	}
     numThreads = atoi(argv[3]);
-    pthread_t threads[numThreads];
+    Thread threads[numThreads];
 	bufferSize = atoi(argv[4]);
 	BuffQueue *queue = buffQueueInit(bufferSize);
     addToBuffQueue(queue, 0, 0);

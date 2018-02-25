@@ -52,7 +52,7 @@ Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 
 _Bool buffQueueIsEmpty(BuffQueue *buffQueue);
 
-int threadIndex(int curIndex, int numThreads);
+void initThreads(Thread threads[], int numThreads);
 
 void *executeRequest(void* param);
 
