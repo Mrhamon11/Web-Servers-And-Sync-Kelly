@@ -60,4 +60,6 @@ void *executeRequest(void* param);
 
 void web(int fd, int hit, long ret, char buffer[]);
 
+void logger(int type, char *s1, char *s2, int socket_fd);
+
 #endif //OS_HW1_SERVER_H

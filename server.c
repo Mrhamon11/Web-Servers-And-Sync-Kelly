@@ -20,6 +20,21 @@
 #define NOTFOUND  404
 
 
+struct {
+    char *ext;
+    char *filetype;
+} extensions [] = {
+        {"gif", "image/gif" },
+        {"jpg", "image/jpg" },
+        {"jpeg","image/jpeg"},
+        {"png", "image/png" },
+        {"ico", "image/ico" },
+        {"zip", "image/zip" },
+        {"gz",  "image/gz"  },
+        {"tar", "image/tar" },
+        {"htm", "text/html" },
+        {"html","text/html" },
+        {0,0} };
 
 
 
@@ -56,6 +71,22 @@ BuffQueue* buffQueueInit(int maxSize) {
 
 void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]) {
 	Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
+    int buflen = strlen(buff);
+
+    char * fstr = (char *)0;
+    for(int i=0;extensions[i].ext != 0;i++) {
+        long len = strlen(extensions[i].ext);
+        if( !strncmp(&buff[buflen-len], extensions[i].ext, len)) {
+            fstr =extensions[i].filetype;
+            break;
+        }
+    }
+
+    (void)sprintf(buff, "%s\n", fstr);
+
+    logger(ERROR, "hello world", "second", 0);
+
+
 	if(buffQueue->size < buffQueue->maxSize){
 		if(buffQueue->head == NULL) {
 			buffQueue->head = buffer;
@@ -110,22 +141,6 @@ void *executeRequest(void* param) {
 }
 
 
-struct {
-	char *ext;
-	char *filetype;
-} extensions [] = {
-	{"gif", "image/gif" },  
-	{"jpg", "image/jpg" }, 
-	{"jpeg","image/jpeg"},
-	{"png", "image/png" },  
-	{"ico", "image/ico" },  
-	{"zip", "image/zip" },  
-	{"gz",  "image/gz"  },  
-	{"tar", "image/tar" },  
-	{"htm", "text/html" },  
-	{"html","text/html" },  
-	{0,0} };
-
 static int dummy; //keep compiler happy
 
 void logger(int type, char *s1, char *s2, int socket_fd)
@@ -134,26 +149,27 @@ void logger(int type, char *s1, char *s2, int socket_fd)
 	char logbuffer[BUFSIZE*2];
 
 	switch (type) {
-	case ERROR: (void)sprintf(logbuffer,"ERROR: %s:%s Errno=%d exiting pid=%d",s1, s2, errno,getpid()); 
+	case ERROR: (void)sprintf(logbuffer,"ERROR: %s:%s Errno=%d exiting pid=%d",s1, s2, errno,getpid());
 		break;
-	case FORBIDDEN: 
+	case FORBIDDEN:
 		dummy = write(socket_fd, "HTTP/1.1 403 Forbidden\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>403 Forbidden</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",271);
-		(void)sprintf(logbuffer,"FORBIDDEN: %s:%s",s1, s2); 
+		(void)sprintf(logbuffer,"FORBIDDEN: %s:%s",s1, s2);
 		break;
-	case NOTFOUND: 
+	case NOTFOUND:
 		dummy = write(socket_fd, "HTTP/1.1 404 Not Found\nContent-Length: 136\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\nThe requested URL was not found on this server.\n</body></html>\n",224);
-		(void)sprintf(logbuffer,"NOT FOUND: %s:%s",s1, s2); 
+		(void)sprintf(logbuffer,"NOT FOUND: %s:%s",s1, s2);
 		break;
 	case LOG: (void)sprintf(logbuffer," INFO: %s:%s:%d",s1, s2,socket_fd); break;
-	}	
+	}
 	/* No checks here, nothing can be done with a failure anyway */
 	if((fd = open("nweb.log", O_CREAT| O_WRONLY | O_APPEND,0644)) >= 0) {
-		dummy = write(fd,logbuffer,strlen(logbuffer)); 
-		dummy = write(fd,"\n",1);      
+		dummy = write(fd,logbuffer,strlen(logbuffer));
+		dummy = write(fd,"\n",1);
 		(void)close(fd);
 	}
 	if(type == ERROR || type == NOTFOUND || type == FORBIDDEN) exit(3);
 }
+
 
 /* this is a child web server process, so we can exit on errors */
 void web(int fd, int hit, long ret, char buffer[])
@@ -211,13 +227,13 @@ void web(int fd, int hit, long ret, char buffer[])
           (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: nweb/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n", VERSION, len, fstr); /* Header + a blank line */
 	logger(LOG,"Header",buffer,hit);
 	dummy = write(fd,buffer,strlen(buffer));
-	
+
     /* Send the statistical headers described in the paper, example below
-    
+
     (void)sprintf(buffer,"X-stat-req-arrival-count: %d\r\n", xStatReqArrivalCount);
 	dummy = write(fd,buffer,strlen(buffer));
     */
-    
+
     /* send file in 8KB block - last block may be smaller */
 	while (	(ret = read(file_fd, buffer, BUFSIZE)) > 0 ) {
 		dummy = write(fd,buffer,ret);
@@ -271,7 +287,7 @@ int main(int argc, char **argv)
 		return 0; /* parent returns OK to shell */
 	(void)signal(SIGCHLD, SIG_IGN); /* ignore child death */
 	(void)signal(SIGHUP, SIG_IGN); /* ignore terminal hangups */
-	for(i=0;i<32;i++)
+	for(i=3;i<32;i++)
 		(void)close(i);		/* close open files */
 	(void)setpgrp();		/* break away from process group */
 	logger(LOG,"nweb starting",argv[1],getpid());
