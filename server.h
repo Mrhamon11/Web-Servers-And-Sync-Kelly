@@ -30,6 +30,8 @@ struct Thread {
 struct Buffer{
     int socketfd;
     int hit;
+    long ret;
+    char *buff;
     struct Buffer *next;
 };
 
@@ -42,11 +44,11 @@ struct BuffQueue{
 
 Thread* threadInit(int id);
 
-Buffer* bufferInit(int socketfd, int hit);
+Buffer* bufferInit(int socketfd, int hit, long ret, char buff[]);
 
 BuffQueue* buffQueueInit(int maxSize);
 
-void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit);
+void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]);
 
 Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 
@@ -56,6 +58,6 @@ void initThreads(Thread threads[], int numThreads, BuffQueue *queue);
 
 void *executeRequest(void* param);
 
-void web(int fd, int hit);
+void web(int fd, int hit, long ret, char buffer[]);
 
 #endif //OS_HW1_SERVER_H

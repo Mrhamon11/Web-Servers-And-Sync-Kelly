@@ -33,11 +33,15 @@ Thread* threadInit(int id) {
 	return thread;
 }
 
-Buffer* bufferInit(int socketfd, int hit) {
+Buffer* bufferInit(int socketfd, int hit, long ret, char buff[]) {
 	Buffer *buffer = malloc(sizeof(Buffer));
 	buffer->socketfd = socketfd;
 	buffer->hit = hit;
 	buffer->next = NULL;
+    buffer->ret = ret;
+    char *buffcopy = malloc(sizeof(char) * strlen(buff));
+    strcpy(buffcopy, buff);
+    buffer->buff = buffcopy;
 	return buffer;
 }
 
@@ -50,16 +54,16 @@ BuffQueue* buffQueueInit(int maxSize) {
 	return queue;
 }
 
-void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit) {
-	Buffer *buff = bufferInit(socketfd, hit);
+void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]) {
+	Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
 	if(buffQueue->size < buffQueue->maxSize){
 		if(buffQueue->head == NULL) {
-			buffQueue->head = buff;
-			buffQueue->tail = buff;
+			buffQueue->head = buffer;
+			buffQueue->tail = buffer;
 		}
 		else {
-			buffQueue->tail->next = buff;
-			buffQueue->tail = buff;
+			buffQueue->tail->next = buffer;
+			buffQueue->tail = buffer;
 		}
 		buffQueue->size++;
 	}
@@ -84,6 +88,7 @@ _Bool buffQueueIsEmpty(BuffQueue *buffQueue){
 void initThreads(Thread threads[], int numThreads, BuffQueue* queue){
     for(int i = 0; i < numThreads; i++){
         Thread thread = threads[i];
+        thread.id = i;
         pthread_create(&thread.thread, NULL, executeRequest, queue);
     }
 }
@@ -100,7 +105,7 @@ void *executeRequest(void* param) {
 		queueAccessible = buffQueueIsEmpty(buffQueue) ? FALSE : TRUE;
 		pthread_mutex_unlock(&m);
 		pthread_cond_broadcast(&cond);
-		web(buffer->socketfd,buffer->hit);
+		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff);
 	}
 }
 
@@ -151,14 +156,14 @@ void logger(int type, char *s1, char *s2, int socket_fd)
 }
 
 /* this is a child web server process, so we can exit on errors */
-void web(int fd, int hit)
+void web(int fd, int hit, long ret, char buffer[])
 {
 	int j, file_fd, buflen;
-	long i, ret, len;
+	long i, /*ret,*/ len;
 	char * fstr;
-	static char buffer[BUFSIZE+1]; /* static so zero filled */
-
-	ret =read(fd,buffer,BUFSIZE); 	/* read Web request in one go */
+//	static char buffer[BUFSIZE+1]; /* static so zero filled */
+//
+//	ret =read(fd,buffer,BUFSIZE); 	/* read Web request in one go */
 	if(ret == 0 || ret == -1) {	/* read failure stop now */
 		logger(FORBIDDEN,"failed to read browser request","",fd);
 	}
@@ -298,11 +303,14 @@ int main(int argc, char **argv)
 //                (void)close(socketfd);
 //            }
 //        }
+        char buffer[BUFSIZE + 1];
+        long ret = read(socketfd, buffer, BUFSIZE);
         pthread_mutex_lock(&m);
-        addToBuffQueue(queue, socketfd, hit);
+        addToBuffQueue(queue, socketfd, hit, ret, buffer);
         queueAccessible = TRUE;
         pthread_mutex_unlock(&m);
         pthread_cond_broadcast(&cond);
+        memset(buffer, 0, sizeof(buffer));
     }
 
 }
