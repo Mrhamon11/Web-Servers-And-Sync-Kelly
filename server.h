@@ -33,6 +33,7 @@ struct Buffer{
     long ret;
     char *buff;
     struct Buffer *next;
+    struct Buffer *prev;
 };
 
 struct BuffQueue{
@@ -40,15 +41,18 @@ struct BuffQueue{
     Buffer *tail;
     int size;
     int maxSize;
+    char *type;
 };
 
 Thread* threadInit(int id);
 
 Buffer* bufferInit(int socketfd, int hit, long ret, char buff[]);
 
-BuffQueue* buffQueueInit(int maxSize);
+BuffQueue* buffQueueInit(int maxSize, char *type);
 
 void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]);
+
+void orderedAdd(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]);
 
 Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 

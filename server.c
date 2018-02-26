@@ -53,6 +53,7 @@ Buffer* bufferInit(int socketfd, int hit, long ret, char buff[]) {
 	buffer->socketfd = socketfd;
 	buffer->hit = hit;
 	buffer->next = NULL;
+	buffer->prev = NULL;
     buffer->ret = ret;
     char *buffcopy = malloc(sizeof(char) * strlen(buff));
     strcpy(buffcopy, buff);
@@ -60,41 +61,71 @@ Buffer* bufferInit(int socketfd, int hit, long ret, char buff[]) {
 	return buffer;
 }
 
-BuffQueue* buffQueueInit(int maxSize) {
+BuffQueue* buffQueueInit(int maxSize, char *type) {
 	BuffQueue *queue = malloc(sizeof(BuffQueue));
 	queue->head = NULL;
 	queue->tail = NULL;
 	queue->size = 0;
 	queue->maxSize = maxSize;
+	queue->type = type;
 	return queue;
 }
 
 void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]) {
+	if(strcmp(buffQueue->type, "FIFO") == 0 || strcmp(buffQueue->type, "ANY") == 0) {
+		Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
+
+		if(buffQueue->size < buffQueue->maxSize){
+			if(buffQueue->head == NULL) {
+				buffQueue->head = buffer;
+				buffQueue->tail = buffer;
+			}
+			else {
+				buffQueue->tail->next = buffer;
+				buffQueue->tail = buffer;
+			}
+			buffQueue->size++;
+		}
+	}
+	else {
+		orderedAdd(buffQueue, socketfd, hit, ret, buff);
+	}
+
+}
+
+void orderedAdd(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]) {
 	Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
-    int buflen = strlen(buff);
+	int buflen = strlen(buff);
 
-    char * fstr = (char *)0;
-    for(int i=0;extensions[i].ext != 0;i++) {
-        long len = strlen(extensions[i].ext);
-        if( !strncmp(&buff[buflen-len], extensions[i].ext, len)) {
-            fstr =extensions[i].filetype;
-            break;
-        }
-    }
-
-    (void)sprintf(buff, "%s\n", fstr);
-
-    logger(ERROR, "hello world", "second", 0);
-
-
+	char * fstr = (char *)0;
+	for(int i=0;extensions[i].ext != 0;i++) {
+		long len = strlen(extensions[i].ext);
+		if( !strncmp(&buff[buflen-len], extensions[i].ext, len)) {
+			fstr =extensions[i].filetype;
+			break;
+		}
+	}
 	if(buffQueue->size < buffQueue->maxSize){
-		if(buffQueue->head == NULL) {
-			buffQueue->head = buffer;
-			buffQueue->tail = buffer;
+		if(strcmp(fstr, "text/html") == 0) {
+			if(buffQueueIsEmpty(buffQueue)) {
+				buffQueue->head = buffer;
+				buffQueue->tail = buffer;
+			}
+			else {
+				buffer->next = buffQueue->head;
+				buffQueue->head = buffer;
+			}
+
 		}
 		else {
-			buffQueue->tail->next = buffer;
-			buffQueue->tail = buffer;
+			if(buffQueueIsEmpty(buffQueue)) {
+				buffQueue->head = buffer;
+				buffQueue->tail = buffer;
+			}
+			else {
+				buffer->prev = buffQueue->tail;
+				buffQueue->tail = buffer;
+			}
 		}
 		buffQueue->size++;
 	}
@@ -104,12 +135,21 @@ Buffer* pollFromBuffQueue(BuffQueue *buffQueue){
 	if(buffQueueIsEmpty(buffQueue)){
 		return NULL;
 	}
-	Buffer *toRemove = buffQueue->head;
-	buffQueue->head = toRemove->next;
+
+	Buffer *toRemove;
+	if(strcmp(buffQueue->type, "HPIC") == 0) {
+		toRemove = buffQueue->tail;
+		buffQueue->tail = buffQueue->tail->prev;
+
+	}
+	else {
+		toRemove = buffQueue->head;
+		buffQueue->head = toRemove->next;
+	}
 
 	buffQueue->size--;
-
 	return toRemove;
+
 }
 
 _Bool buffQueueIsEmpty(BuffQueue *buffQueue){
@@ -250,7 +290,7 @@ int main(int argc, char **argv)
 	static struct sockaddr_in cli_addr; /* static = initialised to zeros */
 	static struct sockaddr_in serv_addr; /* static = initialised to zeros */
 
-	if( argc < 5  || argc > 5 || !strcmp(argv[1], "-?") ) {
+	if( argc < 6  || argc > 6 || !strcmp(argv[1], "-?") ) {
 		(void)printf("hint: nweb Port-Number Top-Directory\t\tversion %d\n\n"
 	"\tnweb is a small and very safe mini web server\n"
 	"\tnweb only servers out file/web pages with extensions named below\n"
@@ -280,7 +320,8 @@ int main(int argc, char **argv)
     numThreads = atoi(argv[3]);
     Thread threads[numThreads];
 	bufferSize = atoi(argv[4]);
-    BuffQueue *queue = buffQueueInit(bufferSize);
+	char *type = argv[5];
+    BuffQueue *queue = buffQueueInit(bufferSize, type);
     initThreads(threads, numThreads, queue);
 	/* Become deamon + unstopable and no zombies children (= no wait()) */
 	if(fork() != 0)
