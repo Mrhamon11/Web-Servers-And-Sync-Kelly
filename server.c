@@ -48,7 +48,7 @@ Thread* threadInit(int id) {
 	return thread;
 }
 
-Buffer* bufferInit(int socketfd, int hit, long ret, char buff[]) {
+Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[]) {
 	Buffer *buffer = malloc(sizeof(Buffer));
 	buffer->socketfd = socketfd;
 	buffer->hit = hit;
@@ -71,7 +71,7 @@ BuffQueue* buffQueueInit(int maxSize, char *type) {
 	return queue;
 }
 
-void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]) {
+void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]) {
 	if(strcmp(buffQueue->type, "FIFO") == 0 || strcmp(buffQueue->type, "ANY") == 0) {
 		Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
 
@@ -93,7 +93,7 @@ void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char 
 
 }
 
-void orderedAdd(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]) {
+void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]) {
 	Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
 	int buflen = strlen(buff);
 
@@ -212,8 +212,9 @@ void logger(int type, char *s1, char *s2, int socket_fd)
 
 
 /* this is a child web server process, so we can exit on errors */
-void web(int fd, int hit, long ret, char buffer[])
+void web(int *sfd, int hit, long ret, char buffer[])
 {
+    int fd = *sfd;
 	int j, file_fd, buflen;
 	long i, /*ret,*/ len;
 	char * fstr;
@@ -323,8 +324,8 @@ int main(int argc, char **argv)
 	char *type = argv[5];
     BuffQueue *queue = buffQueueInit(bufferSize, type);
     initThreads(threads, numThreads, queue);
-	/* Become deamon + unstopable and no zombies children (= no wait()) */
-	if(fork() != 0)
+    /* Become deamon + unstopable and no zombies children (= no wait()) */
+    if(fork() != 0)
 		return 0; /* parent returns OK to shell */
 	(void)signal(SIGCHLD, SIG_IGN); /* ignore child death */
 	(void)signal(SIGHUP, SIG_IGN); /* ignore terminal hangups */
@@ -363,11 +364,12 @@ int main(int argc, char **argv)
         char buffer[BUFSIZE + 1];
         long ret = read(socketfd, buffer, BUFSIZE);
         pthread_mutex_lock(&m);
-        addToBuffQueue(queue, socketfd, hit, ret, buffer);
+        addToBuffQueue(queue, &socketfd, hit, ret, buffer);
         queueAccessible = TRUE;
         pthread_mutex_unlock(&m);
         pthread_cond_broadcast(&cond);
         memset(buffer, 0, sizeof(buffer));
+//        printf("%ld,%d,%s,%d ",ret,threads->id, type, bufferSize);
     }
 
 }

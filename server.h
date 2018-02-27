@@ -28,7 +28,7 @@ struct Thread {
 };
 
 struct Buffer{
-    int socketfd;
+    int *socketfd;
     int hit;
     long ret;
     char *buff;
@@ -46,13 +46,13 @@ struct BuffQueue{
 
 Thread* threadInit(int id);
 
-Buffer* bufferInit(int socketfd, int hit, long ret, char buff[]);
+Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[]);
 
 BuffQueue* buffQueueInit(int maxSize, char *type);
 
-void addToBuffQueue(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]);
+void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]);
 
-void orderedAdd(BuffQueue *buffQueue, int socketfd, int hit, long ret, char buff[]);
+void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]);
 
 Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 
@@ -62,7 +62,7 @@ void initThreads(Thread threads[], int numThreads, BuffQueue *queue);
 
 void *executeRequest(void* param);
 
-void web(int fd, int hit, long ret, char buffer[]);
+void web(int *sfd, int hit, long ret, char buffer[]);
 
 void logger(int type, char *s1, char *s2, int socket_fd);
 
