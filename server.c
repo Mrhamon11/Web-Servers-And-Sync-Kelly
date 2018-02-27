@@ -193,9 +193,14 @@ void *executeRequest(void* param) {
 		queueAccessible = FALSE;
 		Buffer *buffer = pollFromBuffQueue(buffQueue);
 		queueAccessible = buffQueueIsEmpty(buffQueue) ? FALSE : TRUE;
+
+		int reqArrived = stats->reqArrived;
+		int reqDispatched = stats->reqDispatched;
+		int reqCompleted = stats->reqCompleted;
+
 		pthread_mutex_unlock(&m);
 		pthread_cond_broadcast(&cond);
-		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff);
+		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff, reqArrived, reqDispatched, reqCompleted);
 		pthread_mutex_lock(&m);
 		stats->reqCompleted++;
 		pthread_mutex_unlock(&m);
@@ -234,7 +239,7 @@ void logger(int type, char *s1, char *s2, int socket_fd)
 
 
 /* this is a child web server process, so we can exit on errors */
-void web(int *sfd, int hit, long ret, char buffer[])
+void web(int *sfd, int hit, long ret, char buffer[], int reqArrived, int reqDispatched, int reqCompleted)
 {
     int fd = *sfd;
 	int j, file_fd, buflen;
@@ -287,9 +292,11 @@ void web(int *sfd, int hit, long ret, char buffer[])
 	logger(LOG,"SEND",&buffer[5],hit);
 	len = (long)lseek(file_fd, (off_t)0, SEEK_END); /* lseek to the file end to find the length */
 	      (void)lseek(file_fd, (off_t)0, SEEK_SET); /* lseek back to the file start ready for reading */
-          (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: nweb/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n", VERSION, len, fstr); /* Header + a blank line */
-	logger(LOG,"Header",buffer,hit);
-	dummy = write(fd,buffer,strlen(buffer));
+          (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: nweb/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\nRequests Arrived: %d\nRequests Dispatched: %d\nRequests Completed: %d\n\n", VERSION, len, fstr, reqArrived, reqDispatched, reqCompleted); /* Header + a blank line */
+    logger(LOG,"Header",buffer,hit);
+    dummy = write(fd,buffer,strlen(buffer));
+          (void)sprintf(buffer, "test string \n");
+    dummy = write(fd,buffer, strlen(buffer));
 
     /* Send the statistical headers described in the paper, example below
 

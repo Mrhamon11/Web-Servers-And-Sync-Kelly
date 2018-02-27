@@ -66,7 +66,7 @@ void initThreads(Thread threads[], int numThreads, BuffQueue *queue);
 
 void *executeRequest(void* param);
 
-void web(int *sfd, int hit, long ret, char buffer[]);
+void web(int *sfd, int hit, long ret, char buffer[], int reqArrived, int reqDispatched, int reqCompleted);
 
 void logger(int type, char *s1, char *s2, int socket_fd);
 
