@@ -198,9 +198,15 @@ void *executeRequest(void* param) {
 		int reqDispatched = stats->reqDispatched;
 		int reqCompleted = stats->reqCompleted;
 
+        struct timeval curTime;
+        gettimeofday(&curTime, NULL);
+
+
+        time_t dispatchedTime = curTime.tv_sec - stats->serverStartTime;
+
 		pthread_mutex_unlock(&m);
 		pthread_cond_broadcast(&cond);
-		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff, reqArrived, reqDispatched, reqCompleted);
+		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff, reqArrived, reqDispatched, reqCompleted, dispatchedTime);
 		pthread_mutex_lock(&m);
 		stats->reqCompleted++;
 		pthread_mutex_unlock(&m);
@@ -239,7 +245,7 @@ void logger(int type, char *s1, char *s2, int socket_fd)
 
 
 /* this is a child web server process, so we can exit on errors */
-void web(int *sfd, int hit, long ret, char buffer[], int reqArrived, int reqDispatched, int reqCompleted)
+void web(int *sfd, int hit, long ret, char buffer[], int reqArrived, int reqDispatched, int reqCompleted, time_t dispatchedTime)
 {
     int fd = *sfd;
 	int j, file_fd, buflen;
@@ -289,10 +295,17 @@ void web(int *sfd, int hit, long ret, char buffer[], int reqArrived, int reqDisp
 	if(( file_fd = open(&buffer[5],O_RDONLY)) == -1) {  /* open the file for reading */
 		logger(NOTFOUND, "failed to open file",&buffer[5],fd);
 	}
-	logger(LOG,"SEND",&buffer[5],hit);
+
+    struct timeval curTime;
+
+    gettimeofday(&curTime, NULL);
+    time_t completedTime = curTime.tv_sec - stats->serverStartTime;
+
+
+    logger(LOG,"SEND",&buffer[5],hit);
 	len = (long)lseek(file_fd, (off_t)0, SEEK_END); /* lseek to the file end to find the length */
 	      (void)lseek(file_fd, (off_t)0, SEEK_SET); /* lseek back to the file start ready for reading */
-          (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: nweb/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\nRequests Arrived: %d\nRequests Dispatched: %d\nRequests Completed: %d\n\n", VERSION, len, fstr, reqArrived, reqDispatched, reqCompleted); /* Header + a blank line */
+          (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: nweb/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\nRequests Arrived: %d\nRequests Dispatched: %d\nRequests Completed: %d\nDispatched Time: %lu\nCompleted Time: %lu\n\n", VERSION, len, fstr, reqArrived, reqDispatched, reqCompleted, dispatchedTime, completedTime); /* Header + a blank line */
     logger(LOG,"Header",buffer,hit);
     dummy = write(fd,buffer,strlen(buffer));
           (void)sprintf(buffer, "test string \n");
@@ -400,7 +413,7 @@ int main(int argc, char **argv)
         pthread_mutex_lock(&m);
 		struct timeval requestArrived;
 		gettimeofday(&requestArrived, NULL);
-		requestArrived.tv_sec = startTime.tv_sec - requestArrived.tv_sec;
+		requestArrived.tv_sec = requestArrived.tv_sec - startTime.tv_sec;
 
 		stats->reqArrived++;
         addToBuffQueue(queue, &socketfd, hit, ret, buffer, requestArrived.tv_sec);
