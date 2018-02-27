@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <sys/time.h>
 #include "server.h"
 
 #define VERSION 23
@@ -19,6 +20,8 @@
 #define FORBIDDEN 403
 #define NOTFOUND  404
 
+
+typedef struct Stats Stats;
 
 struct {
     char *ext;
@@ -40,7 +43,23 @@ struct {
 
 //Our code:
 
+struct Stats{
+    int reqArrived;
+    int reqDispatched;
+    int reqCompleted;
+    __time_t serverStartTime;
+};
 
+Stats *stats;
+
+Stats* statsInit(Stats *stats){
+    stats = malloc(sizeof(Stats));
+    stats->reqArrived = 0;
+    stats->reqDispatched = 0;
+    stats->reqCompleted = 0;
+    stats->serverStartTime = NULL;
+    return stats;
+}
 
 Thread* threadInit(int id) {
 	Thread *thread = malloc(sizeof(Thread));
@@ -286,6 +305,11 @@ void web(int *sfd, int hit, long ret, char buffer[])
 
 int main(int argc, char **argv)
 {
+    stats = statsInit(stats);
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    stats->serverStartTime = now.tv_sec;
+
 	int i, port, /*pid,*/ listenfd, socketfd, hit, numThreads, bufferSize;
 	socklen_t length;
 	static struct sockaddr_in cli_addr; /* static = initialised to zeros */
@@ -369,7 +393,6 @@ int main(int argc, char **argv)
         pthread_mutex_unlock(&m);
         pthread_cond_broadcast(&cond);
         memset(buffer, 0, sizeof(buffer));
-//        printf("%ld,%d,%s,%d ",ret,threads->id, type, bufferSize);
     }
 
 }
