@@ -15,6 +15,6 @@ add_executable(os_hw1
         Makefile
         nigel.jpg
         server.c
-        server.h)
+        server.h client.h)
 
 

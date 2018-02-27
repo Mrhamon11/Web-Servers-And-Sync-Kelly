@@ -9,8 +9,39 @@
 /* Network */
 #include <netdb.h>
 #include <sys/socket.h>
+#include "client.h"
 
 #define BUF_SIZE 100
+
+
+ThreadQueue* threadQueueInit() {
+    ThreadQueue *threadQueue = malloc(sizeof(ThreadQueue));
+    threadQueue->tail = NULL;
+    threadQueue->head = NULL;
+    return threadQueue;
+}
+
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg){
+    ParamStruct *ps = malloc(sizeof(ParamStruct));
+    ps->queue = queue;
+    ps->clientfd = clientfd;
+    ps->path = path;
+    ps->schedalg;
+}
+
+void *getHandler(void *param){
+    ParamStruct *ps = (ParamStruct*) param;
+    GET(ps->clientfd, ps->path, ps->schedalg);
+}
+
+void initThreads(pthread_t threads[], int numThreads, ParamStruct *ps){
+    for(int i = 0; i < numThreads; i++){
+        ThreadQueue *queue = ps->queue;
+
+        pthread_create(&threads[i], NULL, getHandler, ps);
+    }
+}
+
 
 // Get host information (used to establishConnection)
 struct addrinfo *getHostInfo(char *host, char *port) {
@@ -82,6 +113,7 @@ void ticket_unlock(ticket_lock_t *ticket) {
 
 // end queue
 
+
 // Send GET request
 void GET(int clientfd, char *path, char *schedalg) {
     // CONCUR scheduling
@@ -117,6 +149,10 @@ int main(int argc, char **argv) {
     int clientfd;
     char buf[BUF_SIZE];
 
+    char *path = argv[3];
+    int numThreads = atoi(argv[4]);
+    char *schedalg = argv[5];
+
     // argument check
     if (argc != 6) {
         fprintf(stderr, "USAGE: ./httpclient <hostname> <port> <request path> <threads> <schedalg>\n");
@@ -128,6 +164,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "USAGE: Must initialize one or more threads\n");
         return 1;
     }
+
     // scheduling check
     if (strcmp(argv[5], "CONCUR") != 0 && strcmp(argv[4], "FIFO") != 0) {
         fprintf(stderr, "%s\n", "USAGE: Must specify either CONCUR or FIFO scheduling");
@@ -144,7 +181,11 @@ int main(int argc, char **argv) {
     }
 
     // Send GET request > stdout
-    GET(clientfd, argv[3], argv[5]);
+//    GET(clientfd, argv[3], argv[5]);
+    pthread_t threads[atoi(argv[4])];
+    ThreadQueue *queue = threadQueueInit();
+    ParamStruct *ps = psInit(clientfd, path, schedalg);
+    initThreads(threads, atoi(argv[4]), ps);
     while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
         fputs(buf, stdout);
         memset(buf, 0, BUF_SIZE);
