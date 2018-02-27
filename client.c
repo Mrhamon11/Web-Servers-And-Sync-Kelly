@@ -10,7 +10,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-#define BUF_SIZE 1000
+#define BUF_SIZE 100
 
 // Get host information (used to establishConnection)
 struct addrinfo *getHostInfo(char *host, char *port) {
@@ -54,6 +54,8 @@ int establishConnection(struct addrinfo *info) {
     return -1;
 }
 
+// idk how to use this queue
+
 typedef struct ticket_lock {
     pthread_cond_t cond;
     pthread_mutex_t mutex;
@@ -77,6 +79,8 @@ void ticket_unlock(ticket_lock_t *ticket) {
     pthread_cond_broadcast(&ticket->cond);
     pthread_mutex_unlock(&ticket->mutex);
 }
+
+// end queue
 
 // Send GET request
 void GET(int clientfd, char *path, char *schedalg) {
@@ -115,7 +119,7 @@ int main(int argc, char **argv) {
 
     // argument check
     if (argc != 6) {
-        fprintf(stderr, "USAGE: ./httpclient <hostname> <port> <request path> <thread amount> <scheduling>\n");
+        fprintf(stderr, "USAGE: ./httpclient <hostname> <port> <request path> <threads> <schedalg>\n");
         return 1;
     }
 
