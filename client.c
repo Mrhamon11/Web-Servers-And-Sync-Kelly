@@ -8,6 +8,7 @@
 /* Network */
 #include <netdb.h>
 #include <sys/socket.h>
+#include <pthread.h>
 
 #define BUF_SIZE 100
 
@@ -53,11 +54,59 @@ int establishConnection(struct addrinfo *info) {
     return -1;
 }
 
+typedef struct ticket_lock {
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+    unsigned long queue_head, queue_tail;
+} ticket_lock_t;
+
+void ticket_lock(ticket_lock_t *ticket) {
+    unsigned long queue_me;
+
+    pthread_mutex_lock(&ticket->mutex);
+    queue_me = ticket->queue_tail++;
+    while (queue_me != ticket->queue_head) {
+        pthread_cond_wait(&ticket->cond, &ticket->mutex);
+    }
+    pthread_mutex_unlock(&ticket->mutex);
+}
+
+void ticket_unlock(ticket_lock_t *ticket) {
+    pthread_mutex_lock(&ticket->mutex);
+    ticket->queue_head++;
+    pthread_cond_broadcast(&ticket->cond);
+    pthread_mutex_unlock(&ticket->mutex);
+}
+
 // Send GET request
-void GET(int clientfd, char *path) {
-    char req[1000] = {0};
-    sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
-    send(clientfd, req, strlen(req), 0);
+void GET(int clientfd, char *path, char *schedalg) {
+    // CONCUR scheduling
+    if (strcmp(schedalg, "CONCUR") == 0) {
+        // wait
+        pthread_barrier_wait();
+        // send
+        char req[1000] = {0};
+        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
+        send(clientfd, req, strlen(req), 0);
+    } else if (strcmp(schedalg, "FIFO") == 0) { // FIFO scheduling
+        // lock
+        pthread_mutex_lock(&send_lock);
+        // send
+        char req[1000] = {0};
+        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
+        send(clientfd, req, strlen(req), 0);
+        // unlock
+        pthread_mutex_unlock(&send_lock);
+    }
+    // wait for responses
+    char buf[BUF_SIZE];
+    pthread_mutex_lock(&recieve_lock);
+    printf("\n%s%ld\n", "THREAD: ", pthread_self());
+    while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
+        fputs(buf, stdout);
+        memset(buf, 0, BUF_SIZE);
+    }
+    pthread_mutex_unlock(&recieve_lock);
 }
 
 int main(int argc, char **argv) {
@@ -91,7 +140,7 @@ int main(int argc, char **argv) {
     }
 
     // Send GET request > stdout
-    GET(clientfd, argv[3]);
+    GET(clientfd, argv[3], argv[5]);
     while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
         fputs(buf, stdout);
         memset(buf, 0, BUF_SIZE);
