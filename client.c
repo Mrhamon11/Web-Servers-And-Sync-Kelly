@@ -10,7 +10,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-#define BUF_SIZE 100
+#define BUF_SIZE 1000
 
 // Get host information (used to establishConnection)
 struct addrinfo *getHostInfo(char *host, char *port) {

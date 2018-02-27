@@ -20,6 +20,8 @@
 #define NOTFOUND  404
 
 
+typedef struct Stats Stats;
+
 struct {
     char *ext;
     char *filetype;
@@ -40,7 +42,22 @@ struct {
 
 //Our code:
 
+struct Stats{
+    int reqArrived;
+    int reqDispatched;
+    int reqCompleted;
+    time_t serverStartTime;
+};
 
+Stats *stats;
+
+Stats* statsInit(Stats *stats){
+    stats = malloc(sizeof(Stats));
+    stats->reqArrived = 0;
+    stats->reqDispatched = 0;
+    stats->reqCompleted = 0;
+    return stats;
+}
 
 Thread* threadInit(int id) {
 	Thread *thread = malloc(sizeof(Thread));
@@ -48,13 +65,14 @@ Thread* threadInit(int id) {
 	return thread;
 }
 
-Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[]) {
+Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[], time_t timeArrived) {
 	Buffer *buffer = malloc(sizeof(Buffer));
 	buffer->socketfd = socketfd;
 	buffer->hit = hit;
 	buffer->next = NULL;
 	buffer->prev = NULL;
     buffer->ret = ret;
+	buffer->timeArrived = timeArrived;
     char *buffcopy = malloc(sizeof(char) * strlen(buff));
     strcpy(buffcopy, buff);
     buffer->buff = buffcopy;
@@ -71,9 +89,9 @@ BuffQueue* buffQueueInit(int maxSize, char *type) {
 	return queue;
 }
 
-void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]) {
+void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[], time_t timeArrived) {
 	if(strcmp(buffQueue->type, "FIFO") == 0 || strcmp(buffQueue->type, "ANY") == 0) {
-		Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
+		Buffer *buffer = bufferInit(socketfd, hit, ret, buff, timeArrived);
 
 		if(buffQueue->size < buffQueue->maxSize){
 			if(buffQueue->head == NULL) {
@@ -88,13 +106,13 @@ void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char
 		}
 	}
 	else {
-		orderedAdd(buffQueue, socketfd, hit, ret, buff);
+		orderedAdd(buffQueue, socketfd, hit, ret, buff, timeArrived);
 	}
 
 }
 
-void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]) {
-	Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
+void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[], time_t timeArrived) {
+	Buffer *buffer = bufferInit(socketfd, hit, ret, buff, timeArrived);
 	int buflen = strlen(buff);
 
 	char * fstr = (char *)0;
@@ -171,12 +189,21 @@ void *executeRequest(void* param) {
 			pthread_cond_wait(&cond, &m);
 		}
 		pthread_mutex_lock(&m);
+		stats->reqDispatched++;
 		queueAccessible = FALSE;
 		Buffer *buffer = pollFromBuffQueue(buffQueue);
 		queueAccessible = buffQueueIsEmpty(buffQueue) ? FALSE : TRUE;
+
+		int reqArrived = stats->reqArrived;
+		int reqDispatched = stats->reqDispatched;
+		int reqCompleted = stats->reqCompleted;
+
 		pthread_mutex_unlock(&m);
 		pthread_cond_broadcast(&cond);
-		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff);
+		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff, reqArrived, reqDispatched, reqCompleted);
+		pthread_mutex_lock(&m);
+		stats->reqCompleted++;
+		pthread_mutex_unlock(&m);
 	}
 }
 
@@ -212,7 +239,7 @@ void logger(int type, char *s1, char *s2, int socket_fd)
 
 
 /* this is a child web server process, so we can exit on errors */
-void web(int *sfd, int hit, long ret, char buffer[])
+void web(int *sfd, int hit, long ret, char buffer[], int reqArrived, int reqDispatched, int reqCompleted)
 {
     int fd = *sfd;
 	int j, file_fd, buflen;
@@ -265,9 +292,11 @@ void web(int *sfd, int hit, long ret, char buffer[])
 	logger(LOG,"SEND",&buffer[5],hit);
 	len = (long)lseek(file_fd, (off_t)0, SEEK_END); /* lseek to the file end to find the length */
 	      (void)lseek(file_fd, (off_t)0, SEEK_SET); /* lseek back to the file start ready for reading */
-          (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: nweb/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n", VERSION, len, fstr); /* Header + a blank line */
-	logger(LOG,"Header",buffer,hit);
-	dummy = write(fd,buffer,strlen(buffer));
+          (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: nweb/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\nRequests Arrived: %d\nRequests Dispatched: %d\nRequests Completed: %d\n\n", VERSION, len, fstr, reqArrived, reqDispatched, reqCompleted); /* Header + a blank line */
+    logger(LOG,"Header",buffer,hit);
+    dummy = write(fd,buffer,strlen(buffer));
+          (void)sprintf(buffer, "test string \n");
+    dummy = write(fd,buffer, strlen(buffer));
 
     /* Send the statistical headers described in the paper, example below
 
@@ -286,6 +315,11 @@ void web(int *sfd, int hit, long ret, char buffer[])
 
 int main(int argc, char **argv)
 {
+    stats = statsInit(stats);
+    struct timeval startTime;
+    gettimeofday(&startTime, NULL);
+    stats->serverStartTime = startTime.tv_sec;
+
 	int i, port, /*pid,*/ listenfd, socketfd, hit, numThreads, bufferSize;
 	socklen_t length;
 	static struct sockaddr_in cli_addr; /* static = initialised to zeros */
@@ -364,12 +398,16 @@ int main(int argc, char **argv)
         char buffer[BUFSIZE + 1];
         long ret = read(socketfd, buffer, BUFSIZE);
         pthread_mutex_lock(&m);
-        addToBuffQueue(queue, &socketfd, hit, ret, buffer);
+		struct timeval requestArrived;
+		gettimeofday(&requestArrived, NULL);
+		requestArrived.tv_sec = startTime.tv_sec - requestArrived.tv_sec;
+
+		stats->reqArrived++;
+        addToBuffQueue(queue, &socketfd, hit, ret, buffer, requestArrived.tv_sec);
         queueAccessible = TRUE;
         pthread_mutex_unlock(&m);
         pthread_cond_broadcast(&cond);
         memset(buffer, 0, sizeof(buffer));
-//        printf("%ld,%d,%s,%d ",ret,threads->id, type, bufferSize);
     }
 
 }
