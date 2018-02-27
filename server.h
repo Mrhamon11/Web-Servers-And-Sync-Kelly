@@ -7,6 +7,9 @@
 #define FALSE 0
 #define TRUE 1
 
+
+#include <sys/time.h>
+
 //
 // Created by hamon11 on 2/25/18.
 //
@@ -32,6 +35,7 @@ struct Buffer{
     int hit;
     long ret;
     char *buff;
+    time_t timeArrived;
     struct Buffer *next;
     struct Buffer *prev;
 };
@@ -46,13 +50,13 @@ struct BuffQueue{
 
 Thread* threadInit(int id);
 
-Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[]);
+Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[], time_t timeArrived);
 
 BuffQueue* buffQueueInit(int maxSize, char *type);
 
-void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]);
+void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[], time_t timeArrived);
 
-void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]);
+void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[], time_t timeArrived);
 
 Buffer* pollFromBuffQueue(BuffQueue *buffQueue);
 

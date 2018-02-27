@@ -10,7 +10,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <sys/time.h>
 #include "server.h"
 
 #define VERSION 23
@@ -47,7 +46,7 @@ struct Stats{
     int reqArrived;
     int reqDispatched;
     int reqCompleted;
-    __time_t serverStartTime;
+    time_t serverStartTime;
 };
 
 Stats *stats;
@@ -57,7 +56,6 @@ Stats* statsInit(Stats *stats){
     stats->reqArrived = 0;
     stats->reqDispatched = 0;
     stats->reqCompleted = 0;
-    stats->serverStartTime = NULL;
     return stats;
 }
 
@@ -67,13 +65,14 @@ Thread* threadInit(int id) {
 	return thread;
 }
 
-Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[]) {
+Buffer* bufferInit(int *socketfd, int hit, long ret, char buff[], time_t timeArrived) {
 	Buffer *buffer = malloc(sizeof(Buffer));
 	buffer->socketfd = socketfd;
 	buffer->hit = hit;
 	buffer->next = NULL;
 	buffer->prev = NULL;
     buffer->ret = ret;
+	buffer->timeArrived = timeArrived;
     char *buffcopy = malloc(sizeof(char) * strlen(buff));
     strcpy(buffcopy, buff);
     buffer->buff = buffcopy;
@@ -90,9 +89,9 @@ BuffQueue* buffQueueInit(int maxSize, char *type) {
 	return queue;
 }
 
-void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]) {
+void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[], time_t timeArrived) {
 	if(strcmp(buffQueue->type, "FIFO") == 0 || strcmp(buffQueue->type, "ANY") == 0) {
-		Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
+		Buffer *buffer = bufferInit(socketfd, hit, ret, buff, timeArrived);
 
 		if(buffQueue->size < buffQueue->maxSize){
 			if(buffQueue->head == NULL) {
@@ -107,13 +106,13 @@ void addToBuffQueue(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char
 		}
 	}
 	else {
-		orderedAdd(buffQueue, socketfd, hit, ret, buff);
+		orderedAdd(buffQueue, socketfd, hit, ret, buff, timeArrived);
 	}
 
 }
 
-void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[]) {
-	Buffer *buffer = bufferInit(socketfd, hit, ret, buff);
+void orderedAdd(BuffQueue *buffQueue, int *socketfd, int hit, long ret, char buff[], time_t timeArrived) {
+	Buffer *buffer = bufferInit(socketfd, hit, ret, buff, timeArrived);
 	int buflen = strlen(buff);
 
 	char * fstr = (char *)0;
@@ -190,12 +189,16 @@ void *executeRequest(void* param) {
 			pthread_cond_wait(&cond, &m);
 		}
 		pthread_mutex_lock(&m);
+		stats->reqDispatched++;
 		queueAccessible = FALSE;
 		Buffer *buffer = pollFromBuffQueue(buffQueue);
 		queueAccessible = buffQueueIsEmpty(buffQueue) ? FALSE : TRUE;
 		pthread_mutex_unlock(&m);
 		pthread_cond_broadcast(&cond);
 		web(buffer->socketfd,buffer->hit, buffer->ret, buffer->buff);
+		pthread_mutex_lock(&m);
+		stats->reqCompleted++;
+		pthread_mutex_unlock(&m);
 	}
 }
 
@@ -306,9 +309,9 @@ void web(int *sfd, int hit, long ret, char buffer[])
 int main(int argc, char **argv)
 {
     stats = statsInit(stats);
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    stats->serverStartTime = now.tv_sec;
+    struct timeval startTime;
+    gettimeofday(&startTime, NULL);
+    stats->serverStartTime = startTime.tv_sec;
 
 	int i, port, /*pid,*/ listenfd, socketfd, hit, numThreads, bufferSize;
 	socklen_t length;
@@ -388,7 +391,12 @@ int main(int argc, char **argv)
         char buffer[BUFSIZE + 1];
         long ret = read(socketfd, buffer, BUFSIZE);
         pthread_mutex_lock(&m);
-        addToBuffQueue(queue, &socketfd, hit, ret, buffer);
+		struct timeval requestArrived;
+		gettimeofday(&requestArrived, NULL);
+		requestArrived.tv_sec = startTime.tv_sec - requestArrived.tv_sec;
+
+		stats->reqArrived++;
+        addToBuffQueue(queue, &socketfd, hit, ret, buffer, requestArrived.tv_sec);
         queueAccessible = TRUE;
         pthread_mutex_unlock(&m);
         pthread_cond_broadcast(&cond);
