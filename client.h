@@ -28,6 +28,7 @@ struct ParamStruct{
     ThreadQueue *queue;
     int clientfd;
     char *path;
+    char *secondPath;
     char * schedalg;
     int numThreads;
     ticket_lock_t *ticket;
@@ -40,7 +41,7 @@ typedef struct ticket_lock_t {
 } ticket_lock_t;
 
 ThreadQueue* threadQueueInit();
-ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, int numThreads, ticket_lock_t *ticket);
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *secondPath, char *schedalg, int numThreads, ticket_lock_t *ticket);
 ticket_lock_t* ticketInit(pthread_mutex_t *mutex, pthread_cond_t *cond);
 
 

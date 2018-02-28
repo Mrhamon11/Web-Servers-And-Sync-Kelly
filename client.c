@@ -41,11 +41,12 @@ void ticket_unlock(ticket_lock_t *ticket) {
     pthread_mutex_unlock(&ticket->mutex);
 }
 
-ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, int numThreads, ticket_lock_t *ticket){
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *secondPath, char *schedalg, int numThreads, ticket_lock_t *ticket){
     ParamStruct *ps = malloc(sizeof(ParamStruct));
     ps->queue = queue;
     ps->clientfd = clientfd;
     ps->path = path;
+    ps->secondPath = secondPath;
     ps->schedalg = schedalg;
     ps->numThreads = numThreads;
     ps->ticket = ticket;
@@ -62,18 +63,25 @@ ticket_lock_t* ticketInit(pthread_mutex_t *mutex, pthread_cond_t *cond){
 }
 
 void *getHandler(void *param) {
-    ParamStruct *ps = (ParamStruct*) param;
-    if(strcmp(ps->schedalg, "FIFO") == 0){
-        ticket_lock_t *ticket = ps->ticket;
-        ticket_lock(ticket);
-        ticket_unlock(ticket);
+    ParamStruct *ps = (ParamStruct *) param;
+    char *path = ps->path;
+    char *next = ps->secondPath;
+    while(1) {
+        if (strcmp(ps->schedalg, "FIFO") == 0) {
+            ticket_lock_t *ticket = ps->ticket;
+            ticket_lock(ticket);
+            ticket_unlock(ticket);
+        } else {
+            pthread_barrier_init(&barrier, NULL, (unsigned int) ps->numThreads);
+            pthread_barrier_wait(&barrier);
+        }
+        GET(ps->clientfd, path);
+        if (ps->secondPath != NULL) {
+            char *temp = path;
+            path = next;
+            next = temp;
+        }
     }
-    else {
-        pthread_barrier_init(&barrier, NULL, (unsigned int) ps->numThreads);
-        pthread_barrier_wait(&barrier);
-    }
-    GET(ps->clientfd, ps->path);
-    return ps;
 }
 
 void initThreads(pthread_t threads[], int numThreads, ParamStruct *ps){
@@ -171,6 +179,7 @@ int main(int argc, char **argv) {
     char buf[BUF_SIZE];
 
     char *path = argv[5];
+    char *secondPath = argv[6];
     int numThreads = atoi(argv[3]);
     char *schedalg = argv[4];
     ticket_lock_t *ticket = ticketInit(&mutex, &cond);
@@ -206,7 +215,7 @@ int main(int argc, char **argv) {
 //    GET(clientfd, argv[3], argv[5]);
     pthread_t threads[atoi(argv[4])];
     ThreadQueue *queue = threadQueueInit();
-    ParamStruct *ps = psInit(queue, clientfd, path, schedalg, numThreads, ticket);
+    ParamStruct *ps = psInit(queue, clientfd, path, secondPath, schedalg, numThreads, ticket);
     initThreads(threads, atoi(argv[4]), ps);
     while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
         fputs(buf, stdout);

@@ -383,6 +383,17 @@ int main(int argc, char **argv)
 	/* setup the network socket */
 	if((listenfd = socket(AF_INET, SOCK_STREAM,0)) <0)
 		logger(ERROR, "system call","socket",0);
+
+    //Should help with binding and reusing ports, doesn't seem to work.
+    int reuse = 1;
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse)) < 0)
+        perror("setsockopt(SO_REUSEADDR) failed");
+
+    #ifdef SO_REUSEPORT
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0)
+        perror("setsockopt(SO_REUSEPORT) failed");
+    #endif
+
 	port = atoi(argv[1]);
 	if(port < 0 || port >60000)
 		logger(ERROR,"Invalid port number (try 1->60000)",argv[1],0);
