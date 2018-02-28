@@ -13,6 +13,8 @@
 
 #define BUF_SIZE 100
 
+pthread_barrier_t barrier;
+
 
 ThreadQueue* threadQueueInit() {
     ThreadQueue *threadQueue = malloc(sizeof(ThreadQueue));
@@ -54,6 +56,10 @@ void *getHandler(void *param) {
         ticket_lock_t *ticket = ps->ticket;
         ticket_lock(ticket);
         ticket_unlock(ticket);
+    }
+    else {
+        pthread_barrier_init(&barrier, NULL, numThreads);
+        pthread_barrier_wait(&barrier);
     }
     GET(ps->clientfd, ps->path, ps->schedalg);
 }
