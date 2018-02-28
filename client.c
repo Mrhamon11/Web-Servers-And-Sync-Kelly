@@ -73,6 +73,7 @@ void *getHandler(void *param) {
         pthread_barrier_wait(&barrier);
     }
     GET(ps->clientfd, ps->path);
+    return ps;
 }
 
 void initThreads(pthread_t threads[], int numThreads, ParamStruct *ps){
@@ -187,7 +188,7 @@ int main(int argc, char **argv) {
     }
 
     // scheduling check
-    if (strcmp(argv[5], "CONCUR") != 0 && strcmp(argv[4], "FIFO") != 0) {
+    if (strcmp(argv[5], "CONCUR") != 0 && strcmp(argv[5], "FIFO") != 0) {
         fprintf(stderr, "%s\n", "USAGE: Must specify either CONCUR or FIFO scheduling");
         return 1;
     }
