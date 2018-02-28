@@ -5,11 +5,19 @@
 #ifndef OS_HW1_CLIENT_H
 #define OS_HW1_CLIENT_H
 
+//#define TICKET_LOCK_INITIALIZER { PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER }
+
 #include <sys/types.h>
+
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 typedef struct ThreadQueue ThreadQueue;
 typedef struct ParamStruct ParamStruct;
-typedef struct ticket_lock_t ticket_lock_t
+typedef struct ticket_lock_t ticket_lock_t;
+
+
 
 struct ThreadQueue{
     pthread_t *head;
@@ -33,7 +41,7 @@ typedef struct ticket_lock_t {
 
 ThreadQueue* threadQueueInit();
 ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, int numThreads, ticket_lock_t *ticket);
-ticket_lock_t* ticketInit();
+ticket_lock_t* ticketInit(pthread_mutex_t *mutex, pthread_cond_t *cond);
 
 
 void *getHandler(void *param);

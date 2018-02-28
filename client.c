@@ -46,15 +46,16 @@ ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg
     ps->queue = queue;
     ps->clientfd = clientfd;
     ps->path = path;
-    ps->schedalg;
+    ps->schedalg = schedalg;
     ps->numThreads = numThreads;
     ps->ticket = ticket;
+    return ps;
 }
 
-ticket_lock_t* ticketInit(){
+ticket_lock_t* ticketInit(pthread_mutex_t *mutex, pthread_cond_t *cond){
     ticket_lock_t *ticket = malloc(sizeof(ticket_lock_t));
-    ticket->mutex = PTHREAD_MUTEX_INITIALIZER;
-    ticket->cond = PTHREAD_COND_INITIALIZER;
+    ticket->mutex = *mutex;
+    ticket->cond = *cond;
     ticket->queue_head = 0;
     ticket->queue_tail = 0;
     return ticket;
@@ -76,7 +77,7 @@ void *getHandler(void *param) {
 
 void initThreads(pthread_t threads[], int numThreads, ParamStruct *ps){
     for(int i = 0; i < numThreads; i++){
-        ThreadQueue *queue = ps->queue;
+//        ThreadQueue *queue = ps->queue;
 
         pthread_create(&threads[i], NULL, getHandler, ps);
     }
@@ -171,7 +172,7 @@ int main(int argc, char **argv) {
     char *path = argv[3];
     int numThreads = atoi(argv[4]);
     char *schedalg = argv[5];
-    ticket_lock_t *ticket = ticketInit();
+    ticket_lock_t *ticket = ticketInit(&mutex, &cond);
 
     // argument check
     if (argc != 6) {
