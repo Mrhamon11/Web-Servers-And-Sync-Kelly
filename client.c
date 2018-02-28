@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     }
 
     // thread count check
-    if (atoi(argv[4]) < 1) {
+    if (numThreads < 1) {
         fprintf(stderr, "USAGE: Must initialize one or more threads\n");
         return 1;
     }
