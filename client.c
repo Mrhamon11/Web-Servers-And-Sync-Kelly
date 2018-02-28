@@ -21,7 +21,25 @@ ThreadQueue* threadQueueInit() {
     return threadQueue;
 }
 
-ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, ticket_lock *ticket){
+void ticket_lock(ticket_lock_t *ticket) {
+    unsigned long queue_me;
+
+    pthread_mutex_lock(&ticket->mutex);
+    queue_me = ticket->queue_tail++;
+    while (queue_me != ticket->queue_head) {
+        pthread_cond_wait(&ticket->cond, &ticket->mutex);
+    }
+    pthread_mutex_unlock(&ticket->mutex);
+}
+
+void ticket_unlock(ticket_lock_t *ticket) {
+    pthread_mutex_lock(&ticket->mutex);
+    ticket->queue_head++;
+    pthread_cond_broadcast(&ticket->cond);
+    pthread_mutex_unlock(&ticket->mutex);
+}
+
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, ticket_lock_t *ticket){
     ParamStruct *ps = malloc(sizeof(ParamStruct));
     ps->queue = queue;
     ps->clientfd = clientfd;
@@ -34,6 +52,7 @@ void *getHandler(void *param) {
     ParamStruct *ps = (ParamStruct*) param;
     ticket_lock_t *ticket = ps->ticket;
     ticket_lock(ticket);
+    ticket_unlock(ticket);
     GET(ps->clientfd, ps->path, ps->schedalg);
 }
 
