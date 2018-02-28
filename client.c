@@ -41,13 +41,23 @@ void ticket_unlock(ticket_lock_t *ticket) {
     pthread_mutex_unlock(&ticket->mutex);
 }
 
-ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, ticket_lock_t *ticket){
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, int numThreads, ticket_lock_t *ticket){
     ParamStruct *ps = malloc(sizeof(ParamStruct));
     ps->queue = queue;
     ps->clientfd = clientfd;
     ps->path = path;
     ps->schedalg;
+    ps->numThreads = numThreads;
     ps->ticket = ticket;
+}
+
+ticket_lock_t* ticketInit(){
+    ticket_lock_t *ticket = malloc(sizeof(ticket_lock_t));
+    ticket->mutex = PTHREAD_MUTEX_INITIALIZER;
+    ticket->cond = PTHREAD_COND_INITIALIZER;
+    ticket->queue_head = 0;
+    ticket->queue_tail = 0;
+    return ticket;
 }
 
 void *getHandler(void *param) {
@@ -116,35 +126,43 @@ int establishConnection(struct addrinfo *info) {
 }
 
 // Send GET request
-void GET(int clientfd, char *path, char *schedalg) {
-    // CONCUR scheduling
-    if (strcmp(schedalg, "CONCUR") == 0) {
-        // wait
-        pthread_barrier_wait();
-        // send
-        char req[1000] = {0};
-        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
-        send(clientfd, req, strlen(req), 0);
-    } else if (strcmp(schedalg, "FIFO") == 0) { // FIFO scheduling
-        // lock
-        pthread_mutex_lock(&send_lock);
-        // send
-        char req[1000] = {0};
-        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
-        send(clientfd, req, strlen(req), 0);
-        // unlock
-        pthread_mutex_unlock(&send_lock);
-    }
-    // wait for responses
-    char buf[BUF_SIZE];
-    pthread_mutex_lock(&recieve_lock);
-    printf("\n%s%ld\n", "THREAD: ", pthread_self());
-    while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
-        fputs(buf, stdout);
-        memset(buf, 0, BUF_SIZE);
-    }
-    pthread_mutex_unlock(&recieve_lock);
+//void GET(int clientfd, char *path, char *schedalg) {
+//    // CONCUR scheduling
+//    if (strcmp(schedalg, "CONCUR") == 0) {
+//        // wait
+//        pthread_barrier_wait();
+//        // send
+//        char req[1000] = {0};
+//        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
+//        send(clientfd, req, strlen(req), 0);
+//    } else if (strcmp(schedalg, "FIFO") == 0) { // FIFO scheduling
+//        // lock
+//        pthread_mutex_lock(&send_lock);
+//        // send
+//        char req[1000] = {0};
+//        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
+//        send(clientfd, req, strlen(req), 0);
+//        // unlock
+//        pthread_mutex_unlock(&send_lock);
+//    }
+//    // wait for responses
+//    char buf[BUF_SIZE];
+//    pthread_mutex_lock(&recieve_lock);
+//    printf("\n%s%ld\n", "THREAD: ", pthread_self());
+//    while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
+//        fputs(buf, stdout);
+//        memset(buf, 0, BUF_SIZE);
+//    }
+//    pthread_mutex_unlock(&recieve_lock);
+//}
+
+// Send GET request
+void GET(int clientfd, char *path) {
+    char req[1000] = {0};
+    sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
+    send(clientfd, req, strlen(req), 0);
 }
+
 
 int main(int argc, char **argv) {
     int clientfd;
@@ -153,6 +171,7 @@ int main(int argc, char **argv) {
     char *path = argv[3];
     int numThreads = atoi(argv[4]);
     char *schedalg = argv[5];
+    ticket_lock_t *ticket = ticketInit();
 
     // argument check
     if (argc != 6) {
@@ -185,7 +204,7 @@ int main(int argc, char **argv) {
 //    GET(clientfd, argv[3], argv[5]);
     pthread_t threads[atoi(argv[4])];
     ThreadQueue *queue = threadQueueInit();
-    ParamStruct *ps = psInit(clientfd, path, schedalg);
+    ParamStruct *ps = psInit(queue, clientfd, path, schedalg, numThreads, ticket);
     initThreads(threads, atoi(argv[4]), ps);
     while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
         fputs(buf, stdout);

@@ -21,6 +21,7 @@ struct ParamStruct{
     int clientfd;
     char *path;
     char * schedalg;
+    int numThreads;
     ticket_lock_t *ticket;
 };
 
@@ -31,11 +32,13 @@ typedef struct ticket_lock_t {
 } ticket_lock_t;
 
 ThreadQueue* threadQueueInit();
-ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, ticket_lock_t *ticket);
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, int numThreads, ticket_lock_t *ticket);
+ticket_lock_t* ticketInit();
+
 
 void *getHandler(void *param);
 
-void GET(int clientfd, char *path, char *schedalg);
+void GET(int clientfd, char *path);
 
 void ticket_unlock(ticket_lock_t *ticket);
 
