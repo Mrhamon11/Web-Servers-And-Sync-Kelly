@@ -68,10 +68,10 @@ void *getHandler(void *param) {
         ticket_unlock(ticket);
     }
     else {
-        pthread_barrier_init(&barrier, NULL, numThreads);
+        pthread_barrier_init(&barrier, NULL, (unsigned int) ps->numThreads);
         pthread_barrier_wait(&barrier);
     }
-    GET(ps->clientfd, ps->path, ps->schedalg);
+    GET(ps->clientfd, ps->path);
 }
 
 void initThreads(pthread_t threads[], int numThreads, ParamStruct *ps){
