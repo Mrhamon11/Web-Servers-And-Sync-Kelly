@@ -20,10 +20,11 @@ struct ParamStruct{
     int clientfd;
     char *path;
     char * schedalg;
+    ticket_lock_t *ticket;
 };
 
 ThreadQueue* threadQueueInit();
-ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg);
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, ticket_lock_t *ticket);
 
 void *getHandler(void *param);
 

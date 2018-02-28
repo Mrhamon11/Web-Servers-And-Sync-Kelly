@@ -21,12 +21,13 @@ ThreadQueue* threadQueueInit() {
     return threadQueue;
 }
 
-ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg){
+ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg, ticket_lock *ticket){
     ParamStruct *ps = malloc(sizeof(ParamStruct));
     ps->queue = queue;
     ps->clientfd = clientfd;
     ps->path = path;
     ps->schedalg;
+    ps->ticket = ticket;
 }
 
 void *getHandler(void *param){
