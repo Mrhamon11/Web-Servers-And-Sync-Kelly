@@ -50,9 +50,11 @@ ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg
 
 void *getHandler(void *param) {
     ParamStruct *ps = (ParamStruct*) param;
-    ticket_lock_t *ticket = ps->ticket;
-    ticket_lock(ticket);
-    ticket_unlock(ticket);
+    if(strcmp(ps->schedalg, "FIFO") == 0){
+        ticket_lock_t *ticket = ps->ticket;
+        ticket_lock(ticket);
+        ticket_unlock(ticket);
+    }
     GET(ps->clientfd, ps->path, ps->schedalg);
 }
 
@@ -106,15 +108,6 @@ int establishConnection(struct addrinfo *info) {
     freeaddrinfo(info);
     return -1;
 }
-
-// idk how to use this queue
-
-
-
-
-
-// end queue
-
 
 // Send GET request
 void GET(int clientfd, char *path, char *schedalg) {
