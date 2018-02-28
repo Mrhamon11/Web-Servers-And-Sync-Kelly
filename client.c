@@ -170,9 +170,9 @@ int main(int argc, char **argv) {
     int clientfd;
     char buf[BUF_SIZE];
 
-    char *path = argv[3];
-    int numThreads = atoi(argv[4]);
-    char *schedalg = argv[5];
+    char *path = argv[5];
+    int numThreads = atoi(argv[3]);
+    char *schedalg = argv[4];
     ticket_lock_t *ticket = ticketInit(&mutex, &cond);
 
     // argument check
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
     }
 
     // scheduling check
-    if (strcmp(argv[5], "CONCUR") != 0 && strcmp(argv[5], "FIFO") != 0) {
+    if (strcmp(schedalg, "CONCUR") != 0 && strcmp(schedalg, "FIFO") != 0) {
         fprintf(stderr, "%s\n", "USAGE: Must specify either CONCUR or FIFO scheduling");
         return 1;
     }
