@@ -30,8 +30,10 @@ ParamStruct* psInit(ThreadQueue *queue, int clientfd, char *path, char *schedalg
     ps->ticket = ticket;
 }
 
-void *getHandler(void *param){
+void *getHandler(void *param) {
     ParamStruct *ps = (ParamStruct*) param;
+    ticket_lock_t *ticket = ps->ticket;
+    ticket_lock(ticket);
     GET(ps->clientfd, ps->path, ps->schedalg);
 }
 
@@ -88,29 +90,9 @@ int establishConnection(struct addrinfo *info) {
 
 // idk how to use this queue
 
-typedef struct ticket_lock {
-    pthread_cond_t cond;
-    pthread_mutex_t mutex;
-    unsigned long queue_head, queue_tail;
-} ticket_lock_t;
 
-void ticket_lock(ticket_lock_t *ticket) {
-    unsigned long queue_me;
 
-    pthread_mutex_lock(&ticket->mutex);
-    queue_me = ticket->queue_tail++;
-    while (queue_me != ticket->queue_head) {
-        pthread_cond_wait(&ticket->cond, &ticket->mutex);
-    }
-    pthread_mutex_unlock(&ticket->mutex);
-}
 
-void ticket_unlock(ticket_lock_t *ticket) {
-    pthread_mutex_lock(&ticket->mutex);
-    ticket->queue_head++;
-    pthread_cond_broadcast(&ticket->cond);
-    pthread_mutex_unlock(&ticket->mutex);
-}
 
 // end queue
 
