@@ -127,36 +127,6 @@ int establishConnection(struct addrinfo *info) {
     return -1;
 }
 
-// Send GET request
-//void GET(int clientfd, char *path, char *schedalg) {
-//    // CONCUR scheduling
-//    if (strcmp(schedalg, "CONCUR") == 0) {
-//        // wait
-//        pthread_barrier_wait();
-//        // send
-//        char req[1000] = {0};
-//        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
-//        send(clientfd, req, strlen(req), 0);
-//    } else if (strcmp(schedalg, "FIFO") == 0) { // FIFO scheduling
-//        // lock
-//        pthread_mutex_lock(&send_lock);
-//        // send
-//        char req[1000] = {0};
-//        sprintf(req, "GET %s HTTP/1.0\r\n\r\n", path);
-//        send(clientfd, req, strlen(req), 0);
-//        // unlock
-//        pthread_mutex_unlock(&send_lock);
-//    }
-//    // wait for responses
-//    char buf[BUF_SIZE];
-//    pthread_mutex_lock(&recieve_lock);
-//    printf("\n%s%ld\n", "THREAD: ", pthread_self());
-//    while (recv(clientfd, buf, BUF_SIZE, 0) > 0) {
-//        fputs(buf, stdout);
-//        memset(buf, 0, BUF_SIZE);
-//    }
-//    pthread_mutex_unlock(&recieve_lock);
-//}
 
 // Send GET request
 void GET(int clientfd, char *path) {
